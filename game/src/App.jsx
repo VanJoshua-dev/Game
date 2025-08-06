@@ -1,14 +1,14 @@
 
 import './App.css'
-import {Router, Route} from "react-router-dom"
+import  {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import JumpGame from './Game'
 function App() {
 
   return (
     <>
-     <Router>
+     <Routes>
       <Route path='/' element={<JumpGame />} />
-     </Router>
+     </Routes>
     </>
   )
 }
