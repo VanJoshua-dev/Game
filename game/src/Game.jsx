@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
 
-
 import logo from "./assets/BillionsLogo.png";
 import jumpSoundFile from "./assets/sounds/jump.mp3";
 import backgroundSoundFile from "./assets/sounds/backgroundMusic.mp3";
@@ -70,25 +69,13 @@ export default function NinjaAdventure() {
     run1,
     run2,
     run3,
-    run4,
-    run5,
-    run6,
-    run7,
-    run8,
-    run9,
-    run10,
+    run4
   ];
   const jumpFrames = [
     jump1,
     jump2,
     jump3,
     jump4,
-    jump5,
-    jump6,
-    jump7,
-    jump8,
-    jump9,
-    jump10,
   ];
 
   const IdleFrames = [
@@ -96,12 +83,6 @@ export default function NinjaAdventure() {
     idle2,
     idle3,
     idle4,
-    idle5,
-    idle6,
-    idle7,
-    idle8,
-    idle9,
-    idle10,
   ];
 
   // Track current frame
@@ -160,7 +141,19 @@ export default function NinjaAdventure() {
     setScore(0);
     setObstacleSpeed(11);
   };
-
+  const preloadImages = (imagePaths) => {
+    return Promise.all(
+      imagePaths.map(
+        (src) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.src = src;
+            img.onload = resolve;
+            img.onerror = resolve; // Still resolve even if load fails
+          })
+      )
+    );
+  };
   useEffect(() => {
     // Handle obstacle speed every 20
     if (
@@ -175,75 +168,13 @@ export default function NinjaAdventure() {
   }, [score, obstacleSpeed]);
 
   useEffect(() => {
-    // Put ALL assets here
-    const allAssets = [
-      obs1,
-      obs2,
-      obs3,
-      obs4,
-      obs5,
-      obs6,
-      run1,
-      run2,
-      run3,
-      run4,
-      run5,
-      run6,
-      run7,
-      run8,
-      run9,
-      run10,
-      jump1,
-      jump2,
-      jump3,
-      jump4,
-      jump5,
-      jump6,
-      jump7,
-      jump8,
-      jump9,
-      jump10,
-      idle1,
-      idle2,
-      idle3,
-      idle4,
-      idle5,
-      idle6,
-      idle7,
-      idle8,
-      idle9,
-      idle10,
-      logo,
-      jumpSoundFile,
-      backgroundSoundFile,
-      gameOverSoundFile,
-    ];
+    const allFrames = [...IdleFrames, ...runFrames, ...jumpFrames];
 
-    let loadedCount = 0;
-    const totalAssets = allAssets.length;
-
-    const handleLoad = () => {
-      loadedCount++;
-      setLoadProgress(Math.floor((loadedCount / totalAssets) * 100));
-      if (loadedCount === totalAssets) {
-        setIsLoading(false); // ✅ All loaded
-      }
-    };
-
-    allAssets.forEach((asset) => {
-      if (asset.endsWith(".mp3")) {
-        // Audio file
-        const audio = new Audio(asset);
-        audio.addEventListener("canplaythrough", handleLoad, { once: true });
-      } else {
-        // Image file
-        const img = new Image();
-        img.src = asset;
-        img.onload = handleLoad;
-      }
+    preloadImages(allFrames).then(() => {
+      console.log("All frames preloaded!");
+      setAssetsLoaded(true); // You can show "Loading..." until this is true
     });
   }, []);
-
   const jump = () => {
     // handle character jump
     if (
@@ -411,7 +342,7 @@ export default function NinjaAdventure() {
 
   return (
     <div className="w-screen h-screen flex justify-center items-center bg-[#0046FE]">
-      {isLoading ? (
+      {!isLoading ? (
         // Loading screen
         <div className="w-screen h-screen flex flex-col justify-center items-center bg-black text-white">
           <p className="text-2xl mb-4">Loading... {loadProgress}%</p>
