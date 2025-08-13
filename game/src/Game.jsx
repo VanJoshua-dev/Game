@@ -211,37 +211,26 @@ export default function NinjaAdventure() {
   };
 
   useEffect(() => {
-    let currentFrames;
+    let frames = IdleFrames;
+    let speed = 120; // default idle speed
 
     if (!hasStarted || isGameOver) {
-      currentFrames = IdleFrames;
-      if (animationType !== "idle") {
-        setAnimationType("idle");
-        setFrameIndex(0);
-      }
+      frames = IdleFrames;
+      speed = 120;
     } else if (isJumping) {
-      currentFrames = jumpFrames;
-      if (animationType !== "jump") {
-        setAnimationType("jump");
-        setFrameIndex(0);
-      }
+      frames = jumpFrames;
+      speed = 90;
     } else {
-      currentFrames = runFrames;
-      if (animationType !== "run") {
-        setAnimationType("run");
-        setFrameIndex(0);
-      }
+      frames = runFrames;
+      speed = 30;
     }
 
-    const intervalSpeed =
-      animationType === "jump" ? 90 : animationType === "run" ? 30 : 120;
-
     const interval = setInterval(() => {
-      setFrameIndex((prev) => (prev + 1) % currentFrames.length);
-    }, intervalSpeed);
+      setFrameIndex((prev) => (prev + 1) % frames.length);
+    }, speed);
 
     return () => clearInterval(interval);
-  }, [isJumping, hasStarted, isGameOver, animationType]);
+  }, [isJumping, hasStarted, isGameOver]);
 
   useEffect(() => {
     if (!isGameOver && hasStarted) {
