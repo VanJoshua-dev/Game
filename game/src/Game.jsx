@@ -69,20 +69,15 @@ export default function NinjaAdventure() {
     run1,
     run2,
     run3,
-    run4
   ];
   const jumpFrames = [
     jump1,
-    jump2,
-    jump3,
-    jump4,
   ];
 
   const IdleFrames = [
     idle1,
     idle2,
-    idle3,
-    idle4,
+
   ];
 
   // Track current frame
@@ -226,7 +221,7 @@ export default function NinjaAdventure() {
       speed = 90;
     } else {
       frames = runFrames;
-      speed = 30;
+      speed = 50;
     }
 
     const interval = setInterval(() => {
