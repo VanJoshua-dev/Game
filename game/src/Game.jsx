@@ -5,7 +5,7 @@ import logo from "./assets/BillionsLogo.png";
 import jumpSoundFile from "./assets/sounds/jump.mp3";
 import backgroundSoundFile from "./assets/sounds/backgroundMusic.mp3";
 import gameOverSoundFile from "./assets/gameOver.mp3";
-
+import billionsIcon from "./assets/Billions.png";
 // Obstacles
 import obs1 from "./assets/Obstacles/robot1.png";
 import obs2 from "./assets/Obstacles/robot2.png";
@@ -17,37 +17,13 @@ import obs6 from "./assets/Obstacles/robot6.png";
 import run1 from "./assets/characterRunning/Run__000.png";
 import run2 from "./assets/characterRunning/Run__001.png";
 import run3 from "./assets/characterRunning/Run__002.png";
-import run4 from "./assets/characterRunning/Run__003.png";
-import run5 from "./assets/characterRunning/Run__004.png";
-import run6 from "./assets/characterRunning/Run__005.png";
-import run7 from "./assets/characterRunning/Run__006.png";
-import run8 from "./assets/characterRunning/Run__007.png";
-import run9 from "./assets/characterRunning/Run__008.png";
-import run10 from "./assets/characterRunning/Run__009.png";
 
 // Jumping frames
 import jump1 from "./assets/characterJump/Jump__000.png";
-import jump2 from "./assets/characterJump/Jump__001.png";
-import jump3 from "./assets/characterJump/Jump__002.png";
-import jump4 from "./assets/characterJump/Jump__003.png";
-import jump5 from "./assets/characterJump/Jump__004.png";
-import jump6 from "./assets/characterJump/Jump__005.png";
-import jump7 from "./assets/characterJump/Jump__006.png";
-import jump8 from "./assets/characterJump/Jump__007.png";
-import jump9 from "./assets/characterJump/Jump__008.png";
-import jump10 from "./assets/characterJump/Jump__009.png";
 
 // Idle
 import idle1 from "./assets/characterIdle/Idle__000.png";
 import idle2 from "./assets/characterIdle/Idle__001.png";
-import idle3 from "./assets/characterIdle/Idle__002.png";
-import idle4 from "./assets/characterIdle/Idle__003.png";
-import idle5 from "./assets/characterIdle/Idle__004.png";
-import idle6 from "./assets/characterIdle/Idle__005.png";
-import idle7 from "./assets/characterIdle/Idle__006.png";
-import idle8 from "./assets/characterIdle/Idle__007.png";
-import idle9 from "./assets/characterIdle/Idle__008.png";
-import idle10 from "./assets/characterIdle/Idle__009.png";
 
 export default function NinjaAdventure() {
   const [characterBottom, setCharacterBottom] = useState(0);
@@ -65,20 +41,10 @@ export default function NinjaAdventure() {
   const lastMilestoneRef = useRef(0);
   const maxSpeed = 20;
 
-  const runFrames = [
-    run1,
-    run2,
-    run3,
-  ];
-  const jumpFrames = [
-    jump1,
-  ];
+  const runFrames = [run1, run2, run3];
+  const jumpFrames = [jump1];
 
-  const IdleFrames = [
-    idle1,
-    idle2,
-
-  ];
+  const IdleFrames = [idle1, idle2];
 
   // Track current frame
   const [frameIndex, setFrameIndex] = useState(0);
@@ -136,19 +102,48 @@ export default function NinjaAdventure() {
     setScore(0);
     setObstacleSpeed(11);
   };
-  const preloadImages = (imagePaths) => {
-    return Promise.all(
-      imagePaths.map(
-        (src) =>
-          new Promise((resolve) => {
-            const img = new Image();
-            img.src = src;
-            img.onload = resolve;
-            img.onerror = resolve; // Still resolve even if load fails
-          })
-      )
-    );
-  };
+  useEffect(() => {
+    // Put ALL assets here
+    const allAssets = [
+      ...runFrames,
+      ...jumpFrames,
+      ...IdleFrames,
+      obs1,
+      obs2,
+      obs3,
+      obs4,
+      obs5,
+      obs6,
+      logo,
+      jumpSoundFile,
+      backgroundSoundFile,
+      gameOverSoundFile,
+    ];
+
+    let loadedCount = 0;
+    const totalAssets = allAssets.length;
+
+    const handleLoad = () => {
+      loadedCount++;
+      setLoadProgress(Math.floor((loadedCount / totalAssets) * 100));
+      if (loadedCount === totalAssets) {
+        setIsLoading(false); // ✅ All loaded
+      }
+    };
+
+    allAssets.forEach((asset) => {
+      if (asset.endsWith(".mp3")) {
+        // Audio file
+        const audio = new Audio(asset);
+        audio.addEventListener("canplaythrough", handleLoad, { once: true });
+      } else {
+        // Image file
+        const img = new Image();
+        img.src = asset;
+        img.onload = handleLoad;
+      }
+    });
+  }, []);
   useEffect(() => {
     // Handle obstacle speed every 20
     if (
@@ -162,14 +157,6 @@ export default function NinjaAdventure() {
     }
   }, [score, obstacleSpeed]);
 
-  useEffect(() => {
-    const allFrames = [...IdleFrames, ...runFrames, ...jumpFrames];
-
-    preloadImages(allFrames).then(() => {
-      console.log("All frames preloaded!");
-      setAssetsLoaded(true); // You can show "Loading..." until this is true
-    });
-  }, []);
   const jump = () => {
     // handle character jump
     if (
@@ -210,26 +197,38 @@ export default function NinjaAdventure() {
   };
 
   useEffect(() => {
-    let frames = IdleFrames;
-    let speed = 120; // default idle speed
+    let frameTimer;
+    let lastTime = 0;
 
-    if (!hasStarted || isGameOver) {
-      frames = IdleFrames;
-      speed = 120;
-    } else if (isJumping) {
-      frames = jumpFrames;
-      speed = 90;
-    } else {
-      frames = runFrames;
-      speed = 50;
-    }
+    const animate = (time) => {
+      if (!lastTime) lastTime = time;
 
-    const interval = setInterval(() => {
-      setFrameIndex((prev) => (prev + 1) % frames.length);
-    }, speed);
+      const delta = time - lastTime;
+      let frames, speed;
 
-    return () => clearInterval(interval);
-  }, [isJumping, hasStarted, isGameOver]);
+      if (!hasStarted || isGameOver) {
+        frames = IdleFrames;
+        speed = 120;
+      } else if (isJumping) {
+        frames = jumpFrames;
+        speed = 90;
+      } else {
+        frames = runFrames;
+        speed = 50;
+      }
+
+      if (delta >= speed) {
+        setFrameIndex((prev) => (prev + 1) % frames.length);
+        lastTime = time;
+      }
+
+      frameTimer = requestAnimationFrame(animate);
+    };
+
+    frameTimer = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameTimer);
+  }, [hasStarted, isGameOver, isJumping]);
 
   useEffect(() => {
     if (!isGameOver && hasStarted) {
@@ -337,7 +336,7 @@ export default function NinjaAdventure() {
 
   return (
     <div className="w-screen h-screen flex justify-center items-center bg-[#0046FE]">
-      {!isLoading ? (
+      {isLoading ? (
         // Loading screen
         <div className="w-screen h-screen flex flex-col justify-center items-center bg-black text-white">
           <p className="text-2xl mb-4">Loading... {loadProgress}%</p>
@@ -370,12 +369,12 @@ export default function NinjaAdventure() {
             <img
               src={
                 !hasStarted || isGameOver
-                  ? IdleFrames[frameIndex]
+                  ? IdleFrames[frameIndex % IdleFrames.length]
                   : isJumping
-                  ? jumpFrames[frameIndex]
-                  : runFrames[frameIndex]
+                  ? jumpFrames[frameIndex % jumpFrames.length]
+                  : runFrames[frameIndex % runFrames.length]
               }
-              alt="character"
+              alt="Character"
               className="absolute object-contain left-[50px] w-[60px] h-[70px]"
               style={{ bottom: `${characterBottom}px` }}
             />
@@ -399,16 +398,16 @@ export default function NinjaAdventure() {
               <div className="px-4 py-2 h-13 bg-white rounded-sm flex items-center justify-center">
                 <img src={logo} alt="" className="w-40 h-8" />
               </div>
-              <div>
-                <span className="text-lg font-bold px-2 py-1 border-3 rounded-sm border-white text-white flex justify-center items-center gap-2 helvetica">
-                  ${score}
+              <div className="flex flex-col justify-end items-end">
+                <span className="text-lg font-bold px-2 py-1 border-3 rounded-sm border-white  text-white w-20 flex justify-center items-center gap-2 helvetica">
+                  <img src={billionsIcon} alt="" className="w-10"/>{score}
                 </span>
                 <div className="flex gap-2 justify-center items-center px-2 py-1 border-3 border-white rounded-sm mt-2">
                   <span className="text-lg text-white flex flex-col justify-center items-center gap-2 helvetica">
                     Highest Score:
                   </span>
                   <span className="text-lg font-bold text-white flex justify-center items-center gap-2 hel-bold">
-                    ${highScore}
+                    {highScore}
                   </span>
                 </div>
               </div>
@@ -430,7 +429,7 @@ export default function NinjaAdventure() {
                   </div>
                 )}
                 <span className="text-[25px] font-bold text-white flex justify-center mt-2 items-center gap-2 helvetica">
-                  ${score}
+                  <img src={billionsIcon} alt="" className="w-10"/>{score}
                 </span>
               </div>
             )}
