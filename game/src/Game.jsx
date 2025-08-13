@@ -115,7 +115,7 @@ export default function NinjaAdventure() {
   const isHoldingJump = useRef(false);
   const jumpSound = useRef(null);
   const gameOverSound = useRef(null);
-
+  const [animationType, setAnimationType] = useState("idle");
   const startGame = useRef(null);
 
   const obstacleImages = [obs1, obs2, obs3, obs4, obs5, obs6];
@@ -211,21 +211,37 @@ export default function NinjaAdventure() {
   };
 
   useEffect(() => {
-    const interval = setInterval(
-      () => {
-        setFrameIndex((prev) => {
-          if (isJumping) {
-            return (prev + 1) % jumpFrames.length;
-          } else {
-            return (prev + 1) % runFrames.length;
-          }
-        });
-      },
-      isJumping ? 90 : 30
-    );
+    let currentFrames;
+
+    if (!hasStarted || isGameOver) {
+      currentFrames = IdleFrames;
+      if (animationType !== "idle") {
+        setAnimationType("idle");
+        setFrameIndex(0);
+      }
+    } else if (isJumping) {
+      currentFrames = jumpFrames;
+      if (animationType !== "jump") {
+        setAnimationType("jump");
+        setFrameIndex(0);
+      }
+    } else {
+      currentFrames = runFrames;
+      if (animationType !== "run") {
+        setAnimationType("run");
+        setFrameIndex(0);
+      }
+    }
+
+    const intervalSpeed =
+      animationType === "jump" ? 90 : animationType === "run" ? 30 : 120;
+
+    const interval = setInterval(() => {
+      setFrameIndex((prev) => (prev + 1) % currentFrames.length);
+    }, intervalSpeed);
 
     return () => clearInterval(interval);
-  }, [isJumping]);
+  }, [isJumping, hasStarted, isGameOver, animationType]);
 
   useEffect(() => {
     if (!isGameOver && hasStarted) {
