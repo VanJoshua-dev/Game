@@ -112,6 +112,9 @@ export default function NinjaAdventure() {
   const groundLevel = 0;
   const maxJumpHeight = 250;
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
+
   const isHoldingJump = useRef(false);
   const jumpSound = useRef(null);
   const gameOverSound = useRef(null);
@@ -170,6 +173,50 @@ export default function NinjaAdventure() {
       lastMilestoneRef.current = score;
     }
   }, [score, obstacleSpeed]);
+
+  useEffect(() => {
+    // Put ALL assets here
+    const allAssets = [
+      ...runFrames,
+      ...jumpFrames,
+      ...IdleFrames,
+      obs1,
+      obs2,
+      obs3,
+      obs4,
+      obs5,
+      obs6,
+      character,
+      logo,
+      jumpSoundFile,
+      backgroundSoundFile,
+      gameOverSoundFile,
+    ];
+
+    let loadedCount = 0;
+    const totalAssets = allAssets.length;
+
+    const handleLoad = () => {
+      loadedCount++;
+      setLoadProgress(Math.floor((loadedCount / totalAssets) * 100));
+      if (loadedCount === totalAssets) {
+        setIsLoading(false); // ✅ All loaded
+      }
+    };
+
+    allAssets.forEach((asset) => {
+      if (asset.endsWith(".mp3")) {
+        // Audio file
+        const audio = new Audio(asset);
+        audio.addEventListener("canplaythrough", handleLoad, { once: true });
+      } else {
+        // Image file
+        const img = new Image();
+        img.src = asset;
+        img.onload = handleLoad;
+      }
+    });
+  }, []);
 
   const jump = () => {
     // handle character jump
@@ -338,109 +385,123 @@ export default function NinjaAdventure() {
 
   return (
     <div className="w-screen h-screen flex justify-center items-center bg-[#0046FE]">
-      <div className="bg-gray-200 px-2 rounded-sm flex gap-2 relative">
-        <div
-          className={clsx(
-            "relative w-[1100px] h-[600px] overflow-hidden rounded-sm mx-auto",
-            "bg-[#0195FF]"
-          )}
-        >
-          <audio ref={jumpSound} src={jumpSoundFile} preload="auto" />
-          <audio ref={gameOverSound} src={gameOverSoundFile} preload="auto" />
-          <audio
-            ref={startGame}
-            src={backgroundSoundFile}
-            preload="auto"
-            loop
-          />
-
-          {/* Character */}
-          <img
-            src={
-              !hasStarted || isGameOver
-                ? IdleFrames[frameIndex]
-                : isJumping
-                ? jumpFrames[frameIndex]
-                : runFrames[frameIndex]
-            }
-            alt="character"
-            className="absolute object-contain left-[50px] w-[60px] h-[70px]"
-            style={{ bottom: `${characterBottom}px` }}
-          />
-
-          {/* Obstacles */}
-          {obstacles.map((obs, idx) => (
-            <img
-              key={idx}
-              src={obs.img}
-              alt={`Obstacle ${idx}`}
-              className="absolute bottom-0 w-[60px]"
-              style={{
-                left: `${obs.left}px`,
-                height: "100px",
-              }}
+      {isLoading ? (
+        // Loading screen
+        <div className="w-screen h-screen flex flex-col justify-center items-center bg-black text-white">
+          <p className="text-2xl mb-4">Loading... {loadProgress}%</p>
+          <div className="w-64 h-4 bg-gray-700 rounded">
+            <div
+              className="bg-green-500 h-full rounded"
+              style={{ width: `${loadProgress}%` }}
+            ></div>
+          </div>
+        </div>
+      ) : (
+        // Game screen
+        <div className="bg-gray-200 px-2 rounded-sm flex gap-2 relative">
+          <div
+            className={clsx(
+              "relative w-[1100px] h-[600px] overflow-hidden rounded-sm mx-auto",
+              "bg-[#0195FF]"
+            )}
+          >
+            <audio ref={jumpSound} src={jumpSoundFile} preload="auto" />
+            <audio ref={gameOverSound} src={gameOverSoundFile} preload="auto" />
+            <audio
+              ref={startGame}
+              src={backgroundSoundFile}
+              preload="auto"
+              loop
             />
-          ))}
 
-          {/* Score */}
-          <div className="w-full absolute top-0 py-3 flex justify-between  px-3">
-            <div className="px-4 py-2 h-13 bg-white rounded-sm flex items-center justify-center">
-              <img src={logo} alt="" className="w-40 h-8" />
-            </div>
-            <div>
-              <span className="text-lg font-bold px-2 py-1 border-3 rounded-sm border-white text-white flex justify-center items-center gap-2 helvetica">
-                ${score}
-              </span>
-              <div className="flex gap-2 justify-center items-center px-2 py-1 border-3 border-white rounded-sm mt-2">
-                <span className="text-lg   text-white flex flex-col justify-center items-center gap-2 helvetica">
-                  Highest Score:
+            {/* Character */}
+            <img
+              src={
+                !hasStarted || isGameOver
+                  ? IdleFrames[frameIndex]
+                  : isJumping
+                  ? jumpFrames[frameIndex]
+                  : runFrames[frameIndex]
+              }
+              alt="character"
+              className="absolute object-contain left-[50px] w-[60px] h-[70px]"
+              style={{ bottom: `${characterBottom}px` }}
+            />
+
+            {/* Obstacles */}
+            {obstacles.map((obs, idx) => (
+              <img
+                key={idx}
+                src={obs.img}
+                alt={`Obstacle ${idx}`}
+                className="absolute bottom-0 w-[60px]"
+                style={{
+                  left: `${obs.left}px`,
+                  height: "100px",
+                }}
+              />
+            ))}
+
+            {/* Score */}
+            <div className="w-full absolute top-0 py-3 flex justify-between px-3">
+              <div className="px-4 py-2 h-13 bg-white rounded-sm flex items-center justify-center">
+                <img src={logo} alt="" className="w-40 h-8" />
+              </div>
+              <div>
+                <span className="text-lg font-bold px-2 py-1 border-3 rounded-sm border-white text-white flex justify-center items-center gap-2 helvetica">
+                  ${score}
                 </span>
-                <span className="text-lg font-bold text-white flex justify-center items-center gap-2 hel-bold">
-                  ${highScore}
-                </span>
+                <div className="flex gap-2 justify-center items-center px-2 py-1 border-3 border-white rounded-sm mt-2">
+                  <span className="text-lg text-white flex flex-col justify-center items-center gap-2 helvetica">
+                    Highest Score:
+                  </span>
+                  <span className="text-lg font-bold text-white flex justify-center items-center gap-2 hel-bold">
+                    ${highScore}
+                  </span>
+                </div>
               </div>
             </div>
+
+            {/* Game Over */}
+            {isGameOver && (
+              <div className="w-full h-full text-center flex flex-col mt-5 justify-center items-center ">
+                <span className="text-4xl font-bold text-white helvetica">
+                  GAME OVER
+                </span>
+                <br />
+                <span className="text-lg helvetica-normal text-white blink">
+                  Press <strong>[ Enter ] </strong> to Retry
+                </span>
+                {isNewHighScore && (
+                  <div className="text-lg text-green-400 mt-2 helvetica-normal">
+                    🎉 New Highest Score! 🎉
+                  </div>
+                )}
+                <span className="text-[25px] font-bold text-white flex justify-center mt-2 items-center gap-2 helvetica">
+                  ${score}
+                </span>
+              </div>
+            )}
+
+            {/* Start Screen */}
+            {!hasStarted && (
+              <div className="absolute left-0 w-full h-full flex flex-col justify-center items-center text-white z-10">
+                <p className="text-4xl font-bold text-white mb-4 blink helvetica title">
+                  Billiionaires Game
+                </p>
+                <p className="text-lg text-white blink helvetica-normal">
+                  Press <strong>[ Enter ]</strong> to Start
+                </p>
+              </div>
+            )}
           </div>
-
-          {/* Game Over */}
-          {isGameOver && (
-            <div className="w-full h-full text-center flex flex-col mt-5 justify-center items-center ">
-              <span className="text-4xl font-bold text-white helvetica">
-                GAME OVER
-              </span>
-              <br />
-              <span className="text-lg helvetica-normal text-white blink">
-                Press <strong>[ Enter ] </strong> to Retry
-              </span>
-              {isNewHighScore && (
-                <div className="text-lg  text-green-400 mt-2 helvetica-normal">
-                  🎉 New Highest Score! 🎉
-                </div>
-              )}
-              <span className="text-[25px] font-bold text-white flex justify-center mt-2 items-center gap-2 helvetica">
-                ${score}
-              </span>
-            </div>
-          )}
-
-          {/* Start Screen */}
-          {!hasStarted && (
-            <div className="absolute left-0 w-full h-full flex flex-col justify-center items-center text-white z-10">
-              <p className="text-4xl font-bold text-white mb-4 blink helvetica title">
-                Billiionaires Game
-              </p>
-              <p className="text-lg text-white blink helvetica-normal">
-                Press <strong>[ Enter ]</strong> to Start
-              </p>
-            </div>
-          )}
         </div>
+      )}
 
-        <div className="absolute w-full bottom-[-30px] text-center  blink">
-          <span className="text-white text-xl helvetica-normal">
-            Hold <strong className="">[ Space ]</strong> to jump higher
-          </span>
-        </div>
+      <div className="absolute w-full bottom-[20px] text-center  blink">
+        <span className="text-white text-xl helvetica-normal">
+          Hold <strong className="">[ Space ]</strong> to jump higher
+        </span>
       </div>
     </div>
   );
