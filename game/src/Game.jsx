@@ -386,7 +386,7 @@ export default function NinjaAdventure() {
               <span className="text-lg font-bold px-2 py-1 border-3 rounded-sm border-white text-white flex justify-center items-center gap-2 helvetica">
                 ${score}
               </span>
-              <div className="flex gap-2 justify-center items-center px-2 py-1 border-3 border-white rounded-sm mb-2">
+              <div className="flex gap-2 justify-center items-center px-2 py-1 border-3 border-white rounded-sm mt-2">
                 <span className="text-lg   text-white flex flex-col justify-center items-center gap-2 helvetica">
                   Highest Score:
                 </span>
