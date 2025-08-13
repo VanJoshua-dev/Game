@@ -438,7 +438,7 @@ export default function NinjaAdventure() {
             {!hasStarted && (
               <div className="absolute left-0 w-full h-full flex flex-col justify-center items-center text-white z-10">
                 <p className="text-4xl font-bold text-white mb-4 blink helvetica title">
-                  Billiionaires Game
+                  Billionaires Game
                 </p>
                 <p className="text-lg text-white blink helvetica-normal">
                   Press <strong>[ Enter ]</strong> to Start
