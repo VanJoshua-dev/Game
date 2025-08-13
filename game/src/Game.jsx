@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
 
-import character from "./assets/character.png";
+
 import logo from "./assets/BillionsLogo.png";
 import jumpSoundFile from "./assets/sounds/jump.mp3";
 import backgroundSoundFile from "./assets/sounds/backgroundMusic.mp3";
@@ -177,16 +177,42 @@ export default function NinjaAdventure() {
   useEffect(() => {
     // Put ALL assets here
     const allAssets = [
-      ...runFrames,
-      ...jumpFrames,
-      ...IdleFrames,
       obs1,
       obs2,
       obs3,
       obs4,
       obs5,
       obs6,
-      character,
+      run1,
+      run2,
+      run3,
+      run4,
+      run5,
+      run6,
+      run7,
+      run8,
+      run9,
+      run10,
+      jump1,
+      jump2,
+      jump3,
+      jump4,
+      jump5,
+      jump6,
+      jump7,
+      jump8,
+      jump9,
+      jump10,
+      idle1,
+      idle2,
+      idle3,
+      idle4,
+      idle5,
+      idle6,
+      idle7,
+      idle8,
+      idle9,
+      idle10,
       logo,
       jumpSoundFile,
       backgroundSoundFile,
