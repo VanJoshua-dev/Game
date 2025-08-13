@@ -1,45 +1,178 @@
 import React, { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
-import character from "./assets/character1.png";
-import jumpSoundFile from "./assets/jump.mp3";
+
+import character from "./assets/character.png";
+import logo from "./assets/BillionsLogo.png";
+import jumpSoundFile from "./assets/sounds/jump.mp3";
+import backgroundSoundFile from "./assets/sounds/backgroundMusic.mp3";
 import gameOverSoundFile from "./assets/gameOver.mp3";
-import billionsLogo from "./assets/BillionsLogo.png";
-export default function JumpGame() {
+
+// Obstacles
+import obs1 from "./assets/Obstacles/robot1.png";
+import obs2 from "./assets/Obstacles/robot2.png";
+import obs3 from "./assets/Obstacles/robot3.png";
+import obs4 from "./assets/Obstacles/robot4.png";
+import obs5 from "./assets/Obstacles/robot5.png";
+import obs6 from "./assets/Obstacles/robot6.png";
+
+import run1 from "./assets/characterRunning/Run__000.png";
+import run2 from "./assets/characterRunning/Run__001.png";
+import run3 from "./assets/characterRunning/Run__002.png";
+import run4 from "./assets/characterRunning/Run__003.png";
+import run5 from "./assets/characterRunning/Run__004.png";
+import run6 from "./assets/characterRunning/Run__005.png";
+import run7 from "./assets/characterRunning/Run__006.png";
+import run8 from "./assets/characterRunning/Run__007.png";
+import run9 from "./assets/characterRunning/Run__008.png";
+import run10 from "./assets/characterRunning/Run__009.png";
+
+// Jumping frames
+import jump1 from "./assets/characterJump/Jump__000.png";
+import jump2 from "./assets/characterJump/Jump__001.png";
+import jump3 from "./assets/characterJump/Jump__002.png";
+import jump4 from "./assets/characterJump/Jump__003.png";
+import jump5 from "./assets/characterJump/Jump__004.png";
+import jump6 from "./assets/characterJump/Jump__005.png";
+import jump7 from "./assets/characterJump/Jump__006.png";
+import jump8 from "./assets/characterJump/Jump__007.png";
+import jump9 from "./assets/characterJump/Jump__008.png";
+import jump10 from "./assets/characterJump/Jump__009.png";
+
+// Idle
+import idle1 from "./assets/characterIdle/Idle__000.png";
+import idle2 from "./assets/characterIdle/Idle__001.png";
+import idle3 from "./assets/characterIdle/Idle__002.png";
+import idle4 from "./assets/characterIdle/Idle__003.png";
+import idle5 from "./assets/characterIdle/Idle__004.png";
+import idle6 from "./assets/characterIdle/Idle__005.png";
+import idle7 from "./assets/characterIdle/Idle__006.png";
+import idle8 from "./assets/characterIdle/Idle__007.png";
+import idle9 from "./assets/characterIdle/Idle__008.png";
+import idle10 from "./assets/characterIdle/Idle__009.png";
+
+export default function NinjaAdventure() {
   const [characterBottom, setCharacterBottom] = useState(0);
   const [isJumping, setIsJumping] = useState(false);
-  const [obstacleLeft, setObstacleLeft] = useState(700);
-  const [obstacleHeight, setObstacleHeight] = useState(40);
-  const [obstacleColor, setObstacleColor] = useState("green");
+  const [obstacles, setObstacles] = useState([]);
   const [isGameOver, setIsGameOver] = useState(false);
   const [score, setScore] = useState(0);
-  const [obstacleSpeed, setObstacleSpeed] = useState(15);
+  const [highScore, setHighScore] = useState(
+    () => Number(localStorage.getItem("highScore")) || 0
+  );
+  const [isNewHighScore, setIsNewHighScore] = useState(false);
+  const [obstacleSpeed, setObstacleSpeed] = useState(11);
   const [hasStarted, setHasStarted] = useState(false);
-  const gravity = 0.7;
-  const jumpVelocity = 15;
-  const groundLevel = 0;
 
-  const gameRef = useRef(null);
+  const lastMilestoneRef = useRef(0);
+  const maxSpeed = 20;
+
+  const runFrames = [
+    run1,
+    run2,
+    run3,
+    run4,
+    run5,
+    run6,
+    run7,
+    run8,
+    run9,
+    run10,
+  ];
+  const jumpFrames = [
+    jump1,
+    jump2,
+    jump3,
+    jump4,
+    jump5,
+    jump6,
+    jump7,
+    jump8,
+    jump9,
+    jump10,
+  ];
+
+  const IdleFrames = [
+    idle1,
+    idle2,
+    idle3,
+    idle4,
+    idle5,
+    idle6,
+    idle7,
+    idle8,
+    idle9,
+    idle10,
+  ];
+
+  // Track current frame
+  const [frameIndex, setFrameIndex] = useState(0);
+
+  const baseGravity = 0.2;
+  const jumpVelocity = 9;
+  const groundLevel = 0;
+  const maxJumpHeight = 250;
+
+  const isHoldingJump = useRef(false);
   const jumpSound = useRef(null);
   const gameOverSound = useRef(null);
-  const getRandomHeight = () => Math.floor(Math.random() * 30) + 30; // Handle the random height ob obstacles
-  const getRandomColor = () => {
-    const colors = ["green", "gray", "purple", "orange", "black"]; // Colors of obstacles
-    return colors[Math.floor(Math.random() * colors.length)];
+
+  const startGame = useRef(null);
+
+  const obstacleImages = [obs1, obs2, obs3, obs4, obs5, obs6];
+
+  const getRandomHeight = () => Math.floor(Math.random() * 60) + 70;
+  const getRandomObs = () =>
+    obstacleImages[Math.floor(Math.random() * obstacleImages.length)];
+
+  const spawnObstacles = (offset = 0) => {
+    const numGroups = Math.floor(Math.random() * 3) + 1;
+    const obstacleGap = 60;
+    let newObstacles = [];
+    let currentX = 1100 + offset;
+    let groupIdCounter = Date.now(); // unique per spawn call
+
+    for (let g = 0; g < numGroups; g++) {
+      const groupSize = Math.floor(Math.random() * 3) + 1;
+      const groupSpacing = 500;
+
+      for (let i = 0; i < groupSize; i++) {
+        newObstacles.push({
+          left: currentX + i * obstacleGap,
+          height: getRandomHeight(),
+          img: getRandomObs(),
+          groupId: groupIdCounter + g, // tag group
+          passed: false,
+        });
+      }
+      currentX += groupSpacing;
+    }
+    return newObstacles;
   };
 
   const resetGame = () => {
-    // Handle the game restart
+    // Handle reset game
     setCharacterBottom(groundLevel);
-    setObstacleLeft(700);
-    setObstacleHeight(getRandomHeight());
-    setObstacleColor(getRandomColor());
+    setObstacles(spawnObstacles());
     setIsGameOver(false);
     setScore(0);
-    setObstacleSpeed(15);
+    setObstacleSpeed(11);
   };
 
+  useEffect(() => {
+    // Handle obstacle speed every 20
+    if (
+      score > 0 &&
+      score % 20 === 0 &&
+      score !== lastMilestoneRef.current &&
+      obstacleSpeed < maxSpeed
+    ) {
+      setObstacleSpeed((prev) => Math.min(prev + 2, maxSpeed));
+      lastMilestoneRef.current = score;
+    }
+  }, [score, obstacleSpeed]);
+
   const jump = () => {
-    // Handle character jump
+    // handle character jump
     if (
       !isJumping &&
       !isGameOver &&
@@ -52,7 +185,14 @@ export default function JumpGame() {
       let position = characterBottom;
 
       const animation = () => {
-        velocity -= gravity;
+        const gravity = baseGravity * (obstacleSpeed / 11);
+
+        if (isHoldingJump.current && position < maxJumpHeight) {
+          velocity -= gravity * 0.4;
+        } else {
+          velocity -= gravity;
+        }
+
         position += velocity;
 
         if (position <= groundLevel) {
@@ -71,121 +211,230 @@ export default function JumpGame() {
   };
 
   useEffect(() => {
-    // Handle the obstacle logic
-    if (!isGameOver && hasStarted) {
-      const obstacleTimer = setInterval(() => {
-        setObstacleLeft((prev) => {
-          if (prev < -20) {
-            setObstacleHeight(getRandomHeight());
-            setObstacleColor(getRandomColor());
-            setScore((s) => s + 1);
-            setObstacleSpeed((s) => s + 0.3);
-            return 700;
+    const interval = setInterval(
+      () => {
+        setFrameIndex((prev) => {
+          if (isJumping) {
+            return (prev + 1) % jumpFrames.length;
+          } else {
+            return (prev + 1) % runFrames.length;
           }
-          return prev - obstacleSpeed;
+        });
+      },
+      isJumping ? 90 : 30
+    );
+
+    return () => clearInterval(interval);
+  }, [isJumping]);
+
+  useEffect(() => {
+    if (!isGameOver && hasStarted) {
+      const timer = setInterval(() => {
+        setObstacles((prev) => {
+          let updated = prev.map((obs) => ({
+            ...obs,
+            left: obs.left - obstacleSpeed,
+          }));
+
+          updated.forEach((obs) => {
+            if (obs.left + 60 < 50 && !obs.passed) {
+              obs.passed = true;
+
+              // Check if this is the LAST obstacle in its group to pass
+              const groupPassed = updated
+                .filter((o) => o.groupId === obs.groupId)
+                .every((o) => o.passed);
+
+              if (groupPassed) {
+                setScore((s) => s + 2); // +2 points per group
+                setObstacleSpeed((speed) => Math.min(speed + 0.05, maxSpeed));
+              }
+            }
+          });
+
+          updated = updated.filter((obs) => obs.left > -60);
+
+          const rightmost = Math.max(...updated.map((o) => o.left), 0);
+          if (rightmost < 400) {
+            updated = [...updated, ...spawnObstacles()];
+          }
+
+          return updated;
         });
       }, 30);
 
-      return () => clearInterval(obstacleTimer);
+      return () => clearInterval(timer);
     }
   }, [isGameOver, obstacleSpeed, hasStarted]);
 
   useEffect(() => {
+    const checkCollision = (obsLeft, obsHeight) => {
+      return obsLeft < 80 && obsLeft > 20 && characterBottom < obsHeight + 50;
+    };
+
     if (
-      obstacleLeft < 80 &&
-      obstacleLeft > 20 &&
-      characterBottom < obstacleHeight + 50
+      obstacles.some((obs) => checkCollision(obs.left, obs.height)) &&
+      !isGameOver &&
+      hasStarted
     ) {
-      if (!isGameOver && hasStarted) {
-        gameOverSound.current?.play(); // Play sound when the player die
-        setIsGameOver(true);
+      gameOverSound.current?.play();
+      setIsGameOver(true);
+      startGame.current?.pause();
+      if (score > highScore) {
+        localStorage.setItem("highScore", score);
+        setHighScore(score);
+        setIsNewHighScore(true);
+      } else {
+        setIsNewHighScore(false);
       }
     }
-  }, [obstacleLeft, characterBottom, obstacleHeight, isGameOver, hasStarted]);
+  }, [obstacles, characterBottom, isGameOver, hasStarted, score, highScore]);
 
   useEffect(() => {
-    // Handle keys
-    const handleKeyUp = (e) => {
-      if (e.code === "Enter" && !hasStarted) {
-        setHasStarted(true);
-        return;
+    const handleKeyDown = (e) => {
+      if (e.code === "Space") {
+        isHoldingJump.current = true;
+        if (!isJumping) jump();
       }
-      if (e.code === "Space") jump();
-      if (e.code === "Enter" && isGameOver) resetGame();
     };
+
+    const handleKeyUp = (e) => {
+      if (e.code === "Space") {
+        isHoldingJump.current = false;
+      }
+      if (e.code === "Enter") {
+        if (!hasStarted) {
+          setHasStarted(true);
+          setObstacles(spawnObstacles());
+          if (startGame.current) {
+            startGame.current.pause(); // stop if already playing
+            startGame.current.currentTime = 0; // rewind to start
+            startGame.current.play(); // play from beginning
+          }
+        } else if (isGameOver) {
+          if (startGame.current) {
+            startGame.current.pause();
+            startGame.current.currentTime = 0;
+            startGame.current.play(); // ✅ start again after reset
+          }
+          resetGame();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-    return () => window.removeEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
   }, [isJumping, isGameOver, hasStarted]);
 
   return (
-    <div className="w-screen h-screen flex justify-center items-center">
-      <div className="">
+    <div className="w-screen h-screen flex justify-center items-center bg-[#0046FE]">
+      <div className="bg-gray-200 px-2 rounded-sm flex gap-2 relative">
         <div
-          ref={gameRef}
           className={clsx(
-            "relative w-[700px] h-[500px] overflow-hidden border-2 rounded-sm shadow-gray-500 shadow-2xl  mx-auto ",
-            "bg-[#0180ff]"
+            "relative w-[1100px] h-[600px] overflow-hidden rounded-sm mx-auto",
+            "bg-[#0195FF]"
           )}
         >
-          <audio ref={jumpSound} src={jumpSoundFile} preload="auto" />{" "}
-          {/* Play the jump sound when the isJumping is true */}
+          <audio ref={jumpSound} src={jumpSoundFile} preload="auto" />
+          <audio ref={gameOverSound} src={gameOverSoundFile} preload="auto" />
           <audio
-            ref={gameOverSound}
-            src={gameOverSoundFile}
+            ref={startGame}
+            src={backgroundSoundFile}
             preload="auto"
-          />{" "}
-          {/* Play this sound when the gameOver is true */}
+            loop
+          />
+
           {/* Character */}
           <img
-            src={character}
+            src={
+              !hasStarted || isGameOver
+                ? IdleFrames[frameIndex]
+                : isJumping
+                ? jumpFrames[frameIndex]
+                : runFrames[frameIndex]
+            }
             alt="character"
-            className="absolute left-[50px] w-[50px] h-[50px]  rounded-sm"
+            className="absolute object-contain left-[50px] w-[60px] h-[70px]"
             style={{ bottom: `${characterBottom}px` }}
           />
-          {/* Obstacle */}
-          <div
-            className="absolute bottom-[0px] w-[20px]"
-            style={{
-              left: `${obstacleLeft}px`,
-              height: `${obstacleHeight}px`,
-              backgroundColor: obstacleColor,
-            }}
-          ></div>
-          {/* Header */}
-          <div className="w-full absolute top-0 py-2 flex justify-between items-center px-4">
+
+          {/* Obstacles */}
+          {obstacles.map((obs, idx) => (
             <img
-              src={billionsLogo}
-              alt=""
-              className="w-50 bg-white p-2 rounded-sm"
+              key={idx}
+              src={obs.img}
+              alt={`Obstacle ${idx}`}
+              className="absolute bottom-0 w-[60px]"
+              style={{
+                left: `${obs.left}px`,
+                height: "100px",
+              }}
             />
-            <span className="text-2xl font-bold text-white">$ {score}</span>
+          ))}
+
+          {/* Score */}
+          <div className="w-full absolute top-0 py-3 flex justify-between  px-3">
+            <div className="px-4 py-2 h-13 bg-white rounded-sm flex items-center justify-center">
+              <img src={logo} alt="" className="w-40 h-8" />
+            </div>
+            <div>
+              <div className="flex gap-2 justify-center items-center px-2 py-1 border-3 border-white rounded-sm mb-2">
+                <span className="text-lg   text-white flex flex-col justify-center items-center gap-2 helvetica">
+                  Highest Score:
+                </span>
+                <span className="text-lg font-bold text-white flex justify-center items-center gap-2 hel-bold">
+                  ${highScore}
+                </span>
+              </div>
+              <span className="text-lg font-bold px-2 py-1 border-3 rounded-sm border-white text-white flex justify-center items-center gap-2 helvetica">
+                ${score}
+              </span>
+            </div>
           </div>
-          <div className="h-full w-full flex justify-center items-center">
-            <h1 className="text-5xl font-bold text-white opacity-80">
-              The Human and AI Network
-            </h1>
-          </div>
-          {/* Shows when gameOver is true */}
+
+          {/* Game Over */}
           {isGameOver && (
-            <div className="absolute top-70 w-full text-center text-3xl font-bold text-red-600">
-              Game Over
+            <div className="w-full h-full text-center flex flex-col mt-5 justify-center items-center ">
+              <span className="text-4xl font-bold text-white helvetica">
+                GAME OVER
+              </span>
               <br />
-              <span className="text-lg">Press Enter to Retry</span>
-              <br />
-              <span className="text-lg">$ {score}</span>
+              <span className="text-lg helvetica-normal text-white blink">
+                Press <strong>[ Enter ] </strong> to Retry
+              </span>
+              {isNewHighScore && (
+                <div className="text-lg  text-green-400 mt-2 helvetica-normal">
+                  🎉 New Highest Score! 🎉
+                </div>
+              )}
+              <span className="text-[25px] font-bold text-white flex justify-center mt-2 items-center gap-2 helvetica">
+                ${score}
+              </span>
             </div>
           )}
-          {/* Show when the game is not started yet */}
+
+          {/* Start Screen */}
           {!hasStarted && (
-            <div className="absolute top-20 left-0 w-full h-full    bg-opacity-60 flex flex-col justify-center items-center text-white z-10">
-              <h1 className="text-3xl font-bold mb-4 blink">
-                Billionaires Game
-              </h1>
-              <p className="text-xl blink">
-                Press <strong>Enter</strong> to Start
+            <div className="absolute left-0 w-full h-full flex flex-col justify-center items-center text-white z-10">
+              <p className="text-4xl font-bold text-white mb-4 blink helvetica title">
+                Billiionaires Game
+              </p>
+              <p className="text-lg text-white blink helvetica-normal">
+                Press <strong>[ Enter ]</strong> to Start
               </p>
             </div>
           )}
+        </div>
+
+        <div className="absolute w-full bottom-[-30px] text-center  blink">
+          <span className="text-white text-xl helvetica-normal">
+            Hold <strong className="">[ Space ]</strong> to jump higher
+          </span>
         </div>
       </div>
     </div>
